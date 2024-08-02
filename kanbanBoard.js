@@ -275,4 +275,127 @@ export class KanbanBoard {
         });
         this.renderFilteredTasks(filteredTasks);
     }
+    renderTagList() {
+        const tagList = document.getElementById('tag-list');
+        const allTags = new Set();
+        Object.values(this.tasks).forEach(columnTasks => {
+            columnTasks.forEach(task => {
+                task.tags.forEach(tag => allTags.add(tag));
+            });
+        });
+        tagList.innerHTML = Array.from(allTags).map(tag => 
+            `<button onclick="kanbanBoard.filterTasks('tag', '${tag}')">${tag}</button>`
+        ).join('');
+    }
+
+    applySettings() {
+        // Apply date format
+        flatpickr.setDefaults({
+            dateFormat: this.settings.dateFormat
+        });
+
+        // Apply default view (board/list)
+        if (this.settings.defaultView === 'list') {
+            this.switchToListView();
+        }
+
+        // Apply notification settings
+        if (this.settings.notifications.dueDate) {
+            this.setupDueDateNotifications();
+        }
+    }
+
+    switchToListView() {
+        // Implementation for list view
+        console.log('Switching to list view');
+    }
+
+    setupDueDateNotifications() {
+        // Implementation for due date notifications
+        console.log('Setting up due date notifications');
+    }
+
+    saveSettings() {
+        this.settings = {
+            defaultView: document.getElementById('default-view').value,
+            dateFormat: document.getElementById('date-format').value,
+            notifications: {
+                dueDate: document.getElementById('notify-due-date').checked,
+                comments: document.getElementById('notify-comments').checked
+            }
+        };
+        localStorage.setItem('settings', JSON.stringify(this.settings));
+        this.applySettings();
+        this.showNotification('Settings saved successfully!');
+    }
+
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    generateUniqueId() {
+        return Math.random().toString(36).substr(2, 9);
+    }
+
+    setupEventListeners() {
+        // ... (previous event listeners)
+
+        // Implement event delegation for dynamically created elements
+        this.board.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-task')) {
+                const taskId = e.target.closest('.task').getAttribute('data-task-id');
+                const columnId = e.target.closest('.column').id;
+                this.deleteTask(columnId, taskId);
+            }
+        });
+
+        // Add more event listeners as needed
+    }
+
+    exportData() {
+        const data = {
+            tasks: this.tasks,
+            columns: this.columns,
+            settings: this.settings
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "kanban_board_data.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    importData(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                this.tasks = data.tasks || {};
+                this.columns = data.columns || [];
+                this.settings = data.settings || this.settings;
+                localStorage.setItem('tasks', JSON.stringify(this.tasks));
+                localStorage.setItem('columns', JSON.stringify(this.columns));
+                localStorage.setItem('settings', JSON.stringify(this.settings));
+                this.init();
+                this.showNotification('Data imported successfully!');
+            } catch (error) {
+                console.error('Error importing data:', error);
+                this.showNotification('Error importing data. Please check the file format.');
+            }
+        };
+        reader.readAsText(file);
+    }
 }
