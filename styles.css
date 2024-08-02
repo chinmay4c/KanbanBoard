@@ -40,10 +40,35 @@ header {
     box-shadow: 0 2px 5px var(--shadow-color);
 }
 
-header h1 {
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1rem;
+}
+
+header h1 {
     font-weight: 300;
     letter-spacing: 1px;
+}
+
+nav ul {
+    display: flex;
+    list-style-type: none;
+}
+
+nav ul li {
+    margin-left: 1rem;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    transition: opacity var(--transition-speed) ease;
+}
+
+nav ul li a:hover {
+    opacity: 0.8;
 }
 
 .header-controls {
@@ -51,6 +76,12 @@ header h1 {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
 }
 
 input[type="text"], button {
@@ -62,7 +93,7 @@ input[type="text"], button {
 
 input[type="text"] {
     flex-grow: 1;
-    margin-right: 1rem;
+    margin-right: 0.5rem;
     background-color: rgba(255, 255, 255, 0.2);
     color: white;
 }
@@ -82,11 +113,70 @@ button:hover {
     background-color: #27ae60;
 }
 
-#kanban-board {
+.primary-btn {
+    background-color: #e74c3c;
+}
+
+.primary-btn:hover {
+    background-color: #c0392b;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--task-background);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px var(--shadow-color);
+    z-index: 1;
+    right: 0;
+}
+
+.dropdown-content a {
+    color: var(--text-color);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--background-color);
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+main {
     display: flex;
     padding: 2rem;
-    overflow-x: auto;
     min-height: calc(100vh - 100px);
+}
+
+#sidebar {
+    width: 250px;
+    padding: 1rem;
+    background-color: var(--task-background);
+    border-radius: 8px;
+    margin-right: 2rem;
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+#sidebar h2 {
+    margin-bottom: 1rem;
+}
+
+#kanban-container {
+    flex-grow: 1;
+    overflow-x: auto;
+}
+
+#kanban-board {
+    display: flex;
 }
 
 .column {
@@ -201,6 +291,7 @@ button:hover {
 .priority-high { border-left: 4px solid #e74c3c; }
 
 .modal {
+    display: none;
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -208,13 +299,12 @@ button:hover {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow: auto;
 }
 
 .modal-content {
     background-color: var(--task-background);
+    margin: 10% auto;
     padding: 2rem;
     border-radius: 8px;
     width: 90%;
@@ -239,6 +329,8 @@ button:hover {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
+    background-color: var(--task-background);
+    color: var(--text-color);
 }
 
 .modal button {
@@ -261,53 +353,16 @@ button:hover {
     cursor: pointer;
 }
 
-.task-comments {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-}
-
-.comment {
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.attachment-list {
-    margin-top: 0.5rem;
-}
-
-.attachment-item {
-    display: inline-block;
-    background-color: var(--secondary-color);
+footer {
+    background-color: var(--primary-color);
     color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    margin-right: 5px;
-    margin-bottom: 5px;
+    text-align: center;
+    padding: 1rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--background-color);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #2980b9;
-}
-
-/* Responsive design */
 @media (max-width: 768px) {
     .header-controls {
         flex-direction: column;
@@ -316,6 +371,16 @@ button:hover {
 
     .header-controls > * {
         margin-bottom: 0.5rem;
+    }
+
+    main {
+        flex-direction: column;
+    }
+
+    #sidebar {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 1rem;
     }
 
     #kanban-board {
@@ -330,7 +395,6 @@ button:hover {
     }
 }
 
-/* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -339,5 +403,3 @@ button:hover {
 .task {
     animation: fadeIn 0.3s ease;
 }
-
-/* Add more animations as needed */
