@@ -9,10 +9,18 @@ export class KanbanBoard {
 
         this.tasks = JSON.parse(localStorage.getItem('tasks')) || {};
         this.columns = JSON.parse(localStorage.getItem('columns')) || [
-            { title: 'Todo', color: '#e0e0e0' },
-            { title: 'In Progress', color: '#fff0b3' },
-            { title: 'Done', color: '#b3ffb3' }
+            { id: 'todo', title: 'Todo', color: '#e0e0e0' },
+            { id: 'in-progress', title: 'In Progress', color: '#fff0b3' },
+            { id: 'done', title: 'Done', color: '#b3ffb3' }
         ];
+        this.settings = JSON.parse(localStorage.getItem('settings')) || {
+            defaultView: 'board',
+            dateFormat: 'MM/DD/YYYY',
+            notifications: {
+                dueDate: true,
+                comments: false
+            }
+        };
 
         this.draggedItem = null;
     }
@@ -21,24 +29,25 @@ export class KanbanBoard {
         this.createBoard();
         this.renderTasks();
         this.setupEventListeners();
+        this.initializeQuickFilters();
+        this.renderTagList();
+        this.applySettings();
     }
 
     createBoard() {
         this.board.innerHTML = '';
-        this.columns.forEach((column, index) => {
+        this.columns.forEach((column) => {
             const columnElement = document.createElement('div');
             columnElement.className = 'column';
-            columnElement.id = this.getColumnId(column.title);
+            columnElement.id = column.id;
             columnElement.style.backgroundColor = column.color;
             columnElement.innerHTML = `
-                <h2>
-                    ${column.title}
-                    <button onclick="kanbanBoard.openColumnModal(${index})"><i class="fas fa-edit"></i></button>
-                </h2>
-                <div class="tasks" ondrop="kanbanBoard.drop(event)" ondragover="kanbanBoard.allowDrop(event)"></div>
-                <div class="add-task">
-                    <button onclick="kanbanBoard.openTaskModal('${column.title}')">Add Task</button>
+                <div class="column-header">
+                    <h2>${column.title}</h2>
+                    <button onclick="kanbanBoard.openColumnModal('${column.id}')"><i class="fas fa-edit"></i></button>
                 </div>
+                <div class="tasks" data-column-id="${column.id}"></div>
+                <button onclick="kanbanBoard.openTaskModal('${column.id}')" class="add-task-btn">Add Task</button>
             `;
             this.board.appendChild(columnElement);
         });
@@ -46,61 +55,60 @@ export class KanbanBoard {
 
     renderTasks() {
         this.columns.forEach(column => {
-            const tasksContainer = document.querySelector(`#${this.getColumnId(column.title)} .tasks`);
+            const tasksContainer = document.querySelector(`#${column.id} .tasks`);
             tasksContainer.innerHTML = '';
-            if (this.tasks[column.title]) {
-                this.tasks[column.title].forEach(task => {
-                    const taskElement = this.createTaskElement(task, column.title);
+            if (this.tasks[column.id]) {
+                this.tasks[column.id].forEach(task => {
+                    const taskElement = this.createTaskElement(task, column.id);
                     tasksContainer.appendChild(taskElement);
                 });
             }
         });
     }
 
-    createTaskElement(task, column) {
+    createTaskElement(task, columnId) {
         const taskElement = document.createElement('div');
         taskElement.className = `task priority-${task.priority}`;
+        taskElement.setAttribute('data-task-id', task.id);
         taskElement.draggable = true;
-        taskElement.ondragstart = (e) => this.drag(e);
         taskElement.innerHTML = `
             <h3>${task.title}</h3>
             <p>${task.description}</p>
             <div class="task-meta">
-                <span>Due: ${task.dueDate}</span>
+                <span>Due: ${this.formatDate(task.dueDate)}</span>
                 <span>Priority: ${task.priority}</span>
             </div>
             <div class="task-tags">
                 ${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
             </div>
-            ${task.attachment ? `<div><i class="fas fa-paperclip attachment-icon"></i>${task.attachment.name}</div>` : ''}
+            ${task.attachment ? `<div><i class="fas fa-paperclip"></i> ${task.attachment.name}</div>` : ''}
             <div class="task-actions">
-                <button class="edit-task" onclick="kanbanBoard.openTaskModal('${column}', ${task.id})"><i class="fas fa-edit"></i></button>
-                <button class="delete-task" onclick="kanbanBoard.deleteTask('${column}', ${task.id})"><i class="fas fa-trash"></i></button>
+                <button onclick="kanbanBoard.openTaskModal('${columnId}', '${task.id}')"><i class="fas fa-edit"></i></button>
+                <button onclick="kanbanBoard.deleteTask('${columnId}', '${task.id}')"><i class="fas fa-trash"></i></button>
             </div>
         `;
         return taskElement;
     }
 
-    openTaskModal(column, taskId = null) {
+    openTaskModal(columnId, taskId = null) {
         this.taskModal.style.display = 'block';
         document.getElementById('modal-title').textContent = taskId ? 'Edit Task' : 'Add Task';
+        this.taskForm.reset();
         if (taskId) {
-            const task = this.tasks[column].find(t => t.id === taskId);
+            const task = this.tasks[columnId].find(t => t.id === taskId);
             document.getElementById('task-title').value = task.title;
             document.getElementById('task-description').value = task.description;
             document.getElementById('task-due-date').value = task.dueDate;
             document.getElementById('task-priority').value = task.priority;
             document.getElementById('task-tags').value = task.tags.join(', ');
-        } else {
-            this.taskForm.reset();
         }
-        this.taskForm.onsubmit = (e) => this.saveTask(e, column, taskId);
+        this.taskForm.onsubmit = (e) => this.saveTask(e, columnId, taskId);
     }
 
-    saveTask(e, column, taskId = null) {
+    saveTask(e, columnId, taskId = null) {
         e.preventDefault();
         const task = {
-            id: taskId || Date.now(),
+            id: taskId || Date.now().toString(),
             title: document.getElementById('task-title').value,
             description: document.getElementById('task-description').value,
             dueDate: document.getElementById('task-due-date').value,
@@ -108,46 +116,51 @@ export class KanbanBoard {
             tags: document.getElementById('task-tags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
             attachment: document.getElementById('task-attachment').files[0] || null
         };
-        if (!this.tasks[column]) {
-            this.tasks[column] = [];
+        if (!this.tasks[columnId]) {
+            this.tasks[columnId] = [];
         }
         if (taskId) {
-            const index = this.tasks[column].findIndex(t => t.id === taskId);
-            this.tasks[column][index] = task;
+            const index = this.tasks[columnId].findIndex(t => t.id === taskId);
+            this.tasks[columnId][index] = task;
         } else {
-            this.tasks[column].push(task);
+            this.tasks[columnId].push(task);
         }
         localStorage.setItem('tasks', JSON.stringify(this.tasks));
         this.renderTasks();
         this.taskModal.style.display = 'none';
+        this.showNotification('Task saved successfully!');
     }
 
-    deleteTask(column, taskId) {
-        this.tasks[column] = this.tasks[column].filter(task => task.id !== taskId);
-        localStorage.setItem('tasks', JSON.stringify(this.tasks));
-        this.renderTasks();
+    deleteTask(columnId, taskId) {
+        if (confirm('Are you sure you want to delete this task?')) {
+            this.tasks[columnId] = this.tasks[columnId].filter(task => task.id !== taskId);
+            localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            this.renderTasks();
+            this.showNotification('Task deleted successfully!');
+        }
     }
 
-    openColumnModal(columnIndex = null) {
+    openColumnModal(columnId = null) {
         this.columnModal.style.display = 'block';
-        if (columnIndex !== null) {
-            const column = this.columns[columnIndex];
+        this.columnForm.reset();
+        if (columnId) {
+            const column = this.columns.find(c => c.id === columnId);
             document.getElementById('column-title').value = column.title;
             document.getElementById('column-color').value = column.color;
-        } else {
-            this.columnForm.reset();
         }
-        this.columnForm.onsubmit = (e) => this.saveColumn(e, columnIndex);
+        this.columnForm.onsubmit = (e) => this.saveColumn(e, columnId);
     }
 
-    saveColumn(e, columnIndex = null) {
+    saveColumn(e, columnId = null) {
         e.preventDefault();
         const column = {
+            id: columnId || this.generateUniqueId(),
             title: document.getElementById('column-title').value,
             color: document.getElementById('column-color').value
         };
-        if (columnIndex !== null) {
-            this.columns[columnIndex] = column;
+        if (columnId) {
+            const index = this.columns.findIndex(c => c.id === columnId);
+            this.columns[index] = column;
         } else {
             this.columns.push(column);
         }
@@ -155,166 +168,111 @@ export class KanbanBoard {
         this.createBoard();
         this.renderTasks();
         this.columnModal.style.display = 'none';
+        this.showNotification('Column saved successfully!');
     }
 
-    allowDrop(event) {
-        event.preventDefault();
-    }
-
-    drag(event) {
-        this.draggedItem = event.target;
-    }
-
-    drop(event) {
-        event.preventDefault();
-        const sourceColumn = this.draggedItem.closest('.column').id;
-        const targetColumn = event.target.closest('.column').id;
+    handleTaskMove(taskElement, targetColumn, sourceColumn) {
+        const taskId = taskElement.getAttribute('data-task-id');
+        const sourceColumnId = sourceColumn.getAttribute('data-column-id');
+        const targetColumnId = targetColumn.getAttribute('data-column-id');
         
-        if (sourceColumn !== targetColumn) {
-            event.target.closest('.tasks').appendChild(this.draggedItem);
-            
-            const sourceColumnName = this.getColumnTitle(sourceColumn);
-            const targetColumnName = this.getColumnTitle(targetColumn);
-            const taskId = parseInt(this.draggedItem.querySelector('.task-actions button').onclick.toString().match(/\d+/)[0]);
-            const taskIndex = this.tasks[sourceColumnName].findIndex(task => task.id === taskId);
-            const [task] = this.tasks[sourceColumnName].splice(taskIndex, 1);
-            if (!this.tasks[targetColumnName]) {
-                this.tasks[targetColumnName] = [];
-            }
-            this.tasks[targetColumnName].push(task);
-            localStorage.setItem('tasks', JSON.stringify(this.tasks));
-            this.renderTasks();
+        const taskIndex = this.tasks[sourceColumnId].findIndex(task => task.id === taskId);
+        const [task] = this.tasks[sourceColumnId].splice(taskIndex, 1);
+        
+        if (!this.tasks[targetColumnId]) {
+            this.tasks[targetColumnId] = [];
         }
+        this.tasks[targetColumnId].push(task);
+        
+        localStorage.setItem('tasks', JSON.stringify(this.tasks));
+        this.showNotification('Task moved successfully!');
     }
 
-    getColumnId(title) {
-        return title.toLowerCase().replace(/ /g, '-');
-    }
+    performAdvancedSearch() {
+        const searchTitle = document.getElementById('search-title').value.toLowerCase();
+        const searchDescription = document.getElementById('search-description').value.toLowerCase();
+        const searchDueDate = document.getElementById('search-due-date').value;
+        const searchPriority = document.getElementById('search-priority').value;
+        const searchTags = document.getElementById('search-tags').value.toLowerCase().split(',').map(tag => tag.trim());
 
-    getColumnTitle(id) {
-        return this.columns.find(col => this.getColumnId(col.title) === id).title;
-    }
-
-    exportData() {
-        const data = {
-            tasks: this.tasks,
-            columns: this.columns
-        };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "kanban_data.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    importData(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = JSON.parse(e.target.result);
-            this.tasks = data.tasks;
-            this.columns = data.columns;
-            localStorage.setItem('tasks', JSON.stringify(this.tasks));
-            localStorage.setItem('columns', JSON.stringify(this.columns));
-            this.createBoard();
-            this.renderTasks();
-        };
-        reader.readAsText(file);
-    }
-
-    setupEventListeners() {
-        Array.from(this.closeBtns).forEach(btn => {
-            btn.onclick = () => {
-                this.taskModal.style.display = 'none';
-                this.columnModal.style.display = 'none';
-            }
-        });
-
-        window.onclick = (event) => {
-            if (event.target == this.taskModal) {
-                this.taskModal.style.display = 'none';
-            }
-            if (event.target == this.columnModal) {
-                this.columnModal.style.display = 'none';
-            }
-        }
-
-        // Add event listener for task search
-        document.getElementById('task-search').addEventListener('input', (e) => this.searchTasks(e.target.value));
-    }
-
-    searchTasks(query) {
-        query = query.toLowerCase();
-        Object.keys(this.tasks).forEach(column => {
-            const tasksContainer = document.querySelector(`#${this.getColumnId(column)} .tasks`);
-            this.tasks[column].forEach(task => {
-                const taskElement = tasksContainer.querySelector(`[data-task-id="${task.id}"]`);
-                if (task.title.toLowerCase().includes(query) || task.description.toLowerCase().includes(query)) {
-                    taskElement.style.display = '';
-                } else {
-                    taskElement.style.display = 'none';
-                }
+        const filteredTasks = {};
+        Object.keys(this.tasks).forEach(columnId => {
+            filteredTasks[columnId] = this.tasks[columnId].filter(task => {
+                return (
+                    (searchTitle === '' || task.title.toLowerCase().includes(searchTitle)) &&
+                    (searchDescription === '' || task.description.toLowerCase().includes(searchDescription)) &&
+                    (searchDueDate === '' || task.dueDate === searchDueDate) &&
+                    (searchPriority === '' || task.priority === searchPriority) &&
+                    (searchTags.length === 0 || searchTags.every(tag => task.tags.map(t => t.toLowerCase()).includes(tag)))
+                );
             });
         });
+
+        this.renderFilteredTasks(filteredTasks);
     }
 
-    addCommentToTask(column, taskId, comment) {
-        const task = this.tasks[column].find(t => t.id === taskId);
-        if (!task.comments) {
-            task.comments = [];
-        }
-        task.comments.push({
-            id: Date.now(),
-            text: comment,
-            timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('tasks', JSON.stringify(this.tasks));
-        this.renderTasks();
-    }
-
-    deleteComment(column, taskId, commentId) {
-        const task = this.tasks[column].find(t => t.id === taskId);
-        task.comments = task.comments.filter(comment => comment.id !== commentId);
-        localStorage.setItem('tasks', JSON.stringify(this.tasks));
-        this.renderTasks();
-    }
-
-    sortTasks(column, sortBy) {
-        this.tasks[column].sort((a, b) => {
-            if (sortBy === 'dueDate') {
-                return new Date(a.dueDate) - new Date(b.dueDate);
-            } else if (sortBy === 'priority') {
-                const priorityOrder = { low: 1, medium: 2, high: 3 };
-                return priorityOrder[b.priority] - priorityOrder[a.priority];
+    renderFilteredTasks(filteredTasks) {
+        this.columns.forEach(column => {
+            const tasksContainer = document.querySelector(`#${column.id} .tasks`);
+            tasksContainer.innerHTML = '';
+            if (filteredTasks[column.id]) {
+                filteredTasks[column.id].forEach(task => {
+                    const taskElement = this.createTaskElement(task, column.id);
+                    tasksContainer.appendChild(taskElement);
+                });
             }
         });
-        this.renderTasks();
     }
 
-    filterTasks(column, filterBy, value) {
-        const tasksContainer = document.querySelector(`#${this.getColumnId(column)} .tasks`);
-        this.tasks[column].forEach(task => {
-            const taskElement = tasksContainer.querySelector(`[data-task-id="${task.id}"]`);
-            if (filterBy === 'priority') {
-                taskElement.style.display = task.priority === value ? '' : 'none';
-            } else if (filterBy === 'tag') {
-                taskElement.style.display = task.tags.includes(value) ? '' : 'none';
-            }
-        });
+    generateAndShowReport() {
+        const report = this.generateReport();
+        document.getElementById('report-content').innerHTML = report;
+        document.getElementById('report-modal').style.display = 'block';
     }
 
     generateReport() {
-        let report = 'Kanban Board Report\n\n';
+        let report = '<h3>Kanban Board Report</h3>';
+        report += '<table><tr><th>Column</th><th>Total Tasks</th><th>Low Priority</th><th>Medium Priority</th><th>High Priority</th></tr>';
         this.columns.forEach(column => {
-            report += `${column.title}:\n`;
-            report += `Total tasks: ${this.tasks[column.title].length}\n`;
-            const priorities = { low: 0, medium: 0, high: 0 };
-            this.tasks[column.title].forEach(task => {
-                priorities[task.priority]++;
-            });
-            report += `Priorities: Low (${priorities.low}), Medium (${priorities.medium}), High (${priorities.high})\n\n`;
+            const columnTasks = this.tasks[column.id] || [];
+            const totalTasks = columnTasks.length;
+            const lowPriority = columnTasks.filter(task => task.priority === 'low').length;
+            const mediumPriority = columnTasks.filter(task => task.priority === 'medium').length;
+            const highPriority = columnTasks.filter(task => task.priority === 'high').length;
+            report += `<tr><td>${column.title}</td><td>${totalTasks}</td><td>${lowPriority}</td><td>${mediumPriority}</td><td>${highPriority}</td></tr>`;
         });
+        report += '</table>';
         return report;
+    }
+
+    toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        this.showNotification('Theme toggled!');
+    }
+
+    initializeQuickFilters() {
+        const quickFiltersContainer = document.getElementById('quick-filters');
+        quickFiltersContainer.innerHTML = `
+            <button onclick="kanbanBoard.filterTasks('all')">All Tasks</button>
+            <button onclick="kanbanBoard.filterTasks('priority', 'high')">High Priority</button>
+            <button onclick="kanbanBoard.filterTasks('dueDate', 'overdue')">Overdue</button>
+        `;
+    }
+
+    filterTasks(filterType, value) {
+        const filteredTasks = {};
+        Object.keys(this.tasks).forEach(columnId => {
+            filteredTasks[columnId] = this.tasks[columnId].filter(task => {
+                if (filterType === 'all') return true;
+                if (filterType === 'priority') return task.priority === value;
+                if (filterType === 'dueDate' && value === 'overdue') {
+                    const dueDate = new Date(task.dueDate);
+                    const today = new Date();
+                    return dueDate < today;
+                }
+                return false;
+            });
+        });
+        this.renderFilteredTasks(filteredTasks);
     }
 }
