@@ -1,27 +1,36 @@
+:root {
+    --primary-color: #333;
+    --secondary-color: #4CAF50;
+    --background-color: #f4f4f4;
+    --task-background: white;
+    --text-color: #333;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 header {
-    background-color: #333;
+    background-color: var(--primary-color);
     color: white;
-    text-align: center;
     padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-#add-column-btn {
-    background-color: #4CAF50;
+header button {
+    background-color: var(--secondary-color);
     color: white;
     border: none;
     padding: 10px 20px;
     cursor: pointer;
     border-radius: 4px;
+    margin-left: 10px;
 }
 
 #kanban-board {
@@ -41,11 +50,21 @@ header {
 
 .column h2 {
     text-align: center;
-    color: #333;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column h2 button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8em;
 }
 
 .task {
-    background-color: white;
+    background-color: var(--task-background);
     border-radius: 3px;
     padding: 10px;
     margin-bottom: 10px;
@@ -68,7 +87,7 @@ header {
 
 .tag {
     background-color: #e0e0e0;
-    color: #333;
+    color: var(--text-color);
     padding: 2px 5px;
     border-radius: 3px;
     font-size: 0.8em;
@@ -81,7 +100,7 @@ header {
 }
 
 .add-task button {
-    background-color: #4CAF50;
+    background-color: var(--secondary-color);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -102,7 +121,7 @@ header {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: var(--background-color);
     margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
@@ -160,3 +179,19 @@ header {
 
 .edit-task { color: #2196F3; }
 .delete-task { color: #F44336; }
+
+.attachment-icon {
+    margin-right: 5px;
+}
+
+@media (max-width: 768px) {
+    #kanban-board {
+        flex-direction: column;
+    }
+
+    .column {
+        width: auto;
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}
