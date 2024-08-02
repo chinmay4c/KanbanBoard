@@ -6,22 +6,161 @@
     <title>Kanban Board</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <header>
-        <h1>Kanban Board</h1>
+        <div class="header-content">
+            <h1>Kanban Board</h1>
+            <nav>
+                <ul>
+                    <li><a href="#" id="dashboard-link">Dashboard</a></li>
+                    <li><a href="#" id="reports-link">Reports</a></li>
+                    <li><a href="#" id="settings-link">Settings</a></li>
+                </ul>
+            </nav>
+        </div>
         <div class="header-controls">
-            <input type="text" id="task-search" placeholder="Search tasks...">
-            <button id="add-column-btn">Add Column</button>
-            <button id="export-btn">Export</button>
-            <button id="import-btn">Import</button>
-            <button id="generate-report-btn">Generate Report</button>
-            <button id="toggle-theme-btn">Toggle Theme</button>
+            <div class="search-container">
+                <input type="text" id="task-search" placeholder="Search tasks...">
+                <button id="advanced-search-btn"><i class="fas fa-cog"></i></button>
+            </div>
+            <button id="add-task-btn" class="primary-btn"><i class="fas fa-plus"></i> Add Task</button>
+            <button id="add-column-btn"><i class="fas fa-columns"></i> Add Column</button>
+            <div class="dropdown">
+                <button id="board-actions-btn"><i class="fas fa-ellipsis-v"></i></button>
+                <div class="dropdown-content">
+                    <a href="#" id="export-btn"><i class="fas fa-file-export"></i> Export</a>
+                    <a href="#" id="import-btn"><i class="fas fa-file-import"></i> Import</a>
+                    <a href="#" id="generate-report-btn"><i class="fas fa-chart-bar"></i> Generate Report</a>
+                    <a href="#" id="toggle-theme-btn"><i class="fas fa-adjust"></i> Toggle Theme</a>
+                </div>
+            </div>
         </div>
     </header>
-    <main id="kanban-board"></main>
+    
+    <main>
+        <aside id="sidebar">
+            <h2>Quick Filters</h2>
+            <div id="quick-filters"></div>
+            <h2>Tags</h2>
+            <div id="tag-list"></div>
+        </aside>
+        <div id="kanban-container">
+            <div id="kanban-board"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Kanban Board. All rights reserved.</p>
+    </footer>
+
     <div id="modal-container"></div>
+    
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Add/Edit Task</h2>
+            <form id="task-form">
+                <input type="text" id="task-title" placeholder="Task Title" required>
+                <textarea id="task-description" placeholder="Task Description"></textarea>
+                <input type="text" id="task-due-date" placeholder="Due Date">
+                <select id="task-priority">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
+                <input type="file" id="task-attachment">
+                <button type="submit">Save Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Column Modal -->
+    <div id="column-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add/Edit Column</h2>
+            <form id="column-form">
+                <input type="text" id="column-title" placeholder="Column Title" required>
+                <input type="color" id="column-color" value="#e0e0e0">
+                <button type="submit">Save Column</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div id="advanced-search-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Advanced Search</h2>
+            <form id="advanced-search-form">
+                <input type="text" id="search-title" placeholder="Title">
+                <input type="text" id="search-description" placeholder="Description">
+                <input type="text" id="search-due-date" placeholder="Due Date">
+                <select id="search-priority">
+                    <option value="">Any Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <input type="text" id="search-tags" placeholder="Tags (comma-separated)">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Kanban Board Report</h2>
+            <div id="report-content"></div>
+            <button id="download-report-btn">Download Report</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Settings</h2>
+            <form id="settings-form">
+                <label>
+                    Default View:
+                    <select id="default-view">
+                        <option value="board">Board</option>
+                        <option value="list">List</option>
+                    </select>
+                </label>
+                <label>
+                    Date Format:
+                    <select id="date-format">
+                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                    </select>
+                </label>
+                <label>
+                    Notification Preferences:
+                    <div>
+                        <input type="checkbox" id="notify-due-date"> Due Date Reminders
+                    </div>
+                    <div>
+                        <input type="checkbox" id="notify-comments"> New Comments
+                    </div>
+                </label>
+                <button type="submit">Save Settings</button>
+            </form>
+        </div>
+    </div>
+
     <input type="file" id="import-input" accept=".json" style="display: none;">
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="main.js" type="module"></script>
 </body>
 </html>
