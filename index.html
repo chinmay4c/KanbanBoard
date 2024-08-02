@@ -10,44 +10,18 @@
 <body>
     <header>
         <h1>Kanban Board</h1>
-        <div>
+        <div class="header-controls">
+            <input type="text" id="task-search" placeholder="Search tasks...">
             <button id="add-column-btn">Add Column</button>
             <button id="export-btn">Export</button>
             <button id="import-btn">Import</button>
+            <button id="generate-report-btn">Generate Report</button>
+            <button id="toggle-theme-btn">Toggle Theme</button>
         </div>
     </header>
     <main id="kanban-board"></main>
-    <div id="task-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2 id="modal-title">Add/Edit Task</h2>
-            <form id="task-form">
-                <input type="text" id="task-title" placeholder="Task Title" required>
-                <textarea id="task-description" placeholder="Task Description"></textarea>
-                <input type="date" id="task-due-date">
-                <select id="task-priority">
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                </select>
-                <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
-                <input type="file" id="task-attachment" accept=".pdf,.doc,.docx,.txt">
-                <button type="submit">Save Task</button>
-            </form>
-        </div>
-    </div>
-    <div id="column-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add/Edit Column</h2>
-            <form id="column-form">
-                <input type="text" id="column-title" placeholder="Column Title" required>
-                <input type="color" id="column-color" value="#e0e0e0">
-                <button type="submit">Save Column</button>
-            </form>
-        </div>
-    </div>
+    <div id="modal-container"></div>
     <input type="file" id="import-input" accept=".json" style="display: none;">
-    <script src="script.js" type="module"></script>
+    <script src="main.js" type="module"></script>
 </body>
 </html>

@@ -4,7 +4,62 @@
     --background-color: #f4f4f4;
     --task-background: white;
     --text-color: #333;
+    --border-color: #ddd;
 }
+
+.dark-theme {
+    --primary-color: #1a1a1a;
+    --secondary-color: #4CAF50;
+    --background-color: #333;
+    --task-background: #424242;
+    --text-color: #f4f4f4;
+    --border-color: #555;
+}
+
+/* ... (include all previous styles) ... */
+
+.task {
+    transition: all 0.3s ease;
+}
+
+.task:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.column {
+    transition: background-color 0.3s ease;
+}
+
+/* Add styles for new features like comments, attachments, etc. */
+.task-comments {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.comment {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.attachment-list {
+    margin-top: 5px;
+}
+
+.attachment-item {
+    display: inline-block;
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-right: 5px;
+    font-size: 0.8em;
+}
+
+/* Add more styles as needed */
 
 body {
     font-family: Arial, sans-serif;
