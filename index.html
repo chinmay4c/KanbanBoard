@@ -5,16 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kanban Board</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <header>
         <h1>Kanban Board</h1>
+        <button id="add-column-btn">Add Column</button>
     </header>
     <main id="kanban-board"></main>
     <div id="task-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Add/Edit Task</h2>
+            <h2 id="modal-title">Add/Edit Task</h2>
             <form id="task-form">
                 <input type="text" id="task-title" placeholder="Task Title" required>
                 <textarea id="task-description" placeholder="Task Description"></textarea>
@@ -24,7 +26,18 @@
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                 </select>
+                <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
                 <button type="submit">Save Task</button>
+            </form>
+        </div>
+    </div>
+    <div id="column-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Column</h2>
+            <form id="column-form">
+                <input type="text" id="column-title" placeholder="Column Title" required>
+                <button type="submit">Add Column</button>
             </form>
         </div>
     </div>
