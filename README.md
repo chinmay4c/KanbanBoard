@@ -1,5 +1,7 @@
 # KanbanBoard
 
+https://chinmay4c.github.io/KanbanBoard/
+
 KanbanBoard is a simple, web-based application for managing tasks and projects using the Kanban methodology. It provides an intuitive interface to help you visualize and manage your workflow efficiently.
 
 ## Features
