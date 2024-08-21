@@ -11,6 +11,9 @@ KanbanBoard is a simple, web-based application for managing tasks and projects u
 - **Drag and Drop**: Move tasks between columns using drag-and-drop functionality.
 - **Responsive Design**: Works well on both desktop and mobile devices.
 
+![image](https://github.com/user-attachments/assets/38bc34ba-d347-47d5-9d6a-557e40d755d6)
+
+
 ## Getting Started
 
 ### Prerequisites
